@@ -1,0 +1,10 @@
+apiVersion: gitlab.kog.krateo.io/v1alpha1
+kind: BearerAuth
+metadata:
+  name: bearer-gitlab
+  namespace: glp
+spec:
+  tokenRef:
+    key: token
+    name: gl-token
+    namespace: krateo-system

@@ -1,0 +1,26 @@
+{{- if .Values.restdefinitions.repo.enabled }}
+kind: RestDefinition
+apiVersion: swaggergen.krateo.io/v1alpha1
+metadata:
+  name: {{ .Release.Name }}-repo
+spec: 
+  oasPath: configmap://{{ .Release.Namespace }}/{{ .Release.Name }}-repo/repo.yaml
+  resourceGroup: gitlab.kog.krateo.io
+  resource: 
+    kind: Repo
+    identifiers:
+    - id
+    verbsDescription:
+    - action: get
+      method: GET
+      path: /projects/{id}
+    - action: update
+      method: PUT
+      path: /projects/{id}
+    - action: delete
+      method: DELETE
+      path: /projects/{id}
+    - action: create
+      method: POST
+      path: /projects
+{{ end }}

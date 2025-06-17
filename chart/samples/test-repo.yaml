@@ -1,0 +1,9 @@
+apiVersion: gitlab.kog.krateo.io/v1alpha1
+kind: Repo
+metadata:
+  name: test-repo
+  namespace: glp
+spec:
+  authenticationRefs:
+    bearerAuthRef: bearer-gitlab
+  id: "ldepandis%2Ftest-repo"
