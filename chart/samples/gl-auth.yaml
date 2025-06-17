@@ -6,5 +6,5 @@ metadata:
 spec:
   tokenRef:
     key: token
-    name: gl-token
-    namespace: krateo-system
+    name: gitlab-repo-creds 
+    namespace: gitlab-system

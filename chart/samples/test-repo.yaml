@@ -6,4 +6,7 @@ metadata:
 spec:
   authenticationRefs:
     bearerAuthRef: bearer-gitlab
-  id: "ldepandis%2Ftest-repo"
+  name: test-repo
+  visibility: public
+  initialize_with_readme: true
+  

@@ -48,11 +48,11 @@ Make sure to replace `<RESOURCE>` to one of the resources supported by the chart
 
 For instance, in the case of the `Repo` resource, you would run:
 ```sh
-until kubectl get deployment gitlab-provider-repo-controller -n krateo-system &>/dev/null; do
+until kubectl get deployment gitlab-provider-repo-controller -n <YOUR_NAMESPACE> &>/dev/null; do
   echo "Waiting for Repo controller deployment to be created..."
   sleep 5
 done
-kubectl wait deployments gitlab-provider-repo-controller --for condition=Available=True --namespace krateo-system --timeout=300s
+kubectl wait deployments gitlab-provider-repo-controller --for condition=Available=True --namespace <YOUR_NAMESPACE> --timeout=300s
 ```
 
 ## Supported resources
@@ -74,7 +74,15 @@ The `Repo` resource allows you to create, update, and delete GitLab repositories
 
 An example of a Repo resource is:
 ```yaml
-
+apiVersion: gitlab.kog.krateo.io/v1alpha1
+kind: Repo
+metadata:
+  name: test-repo
+  namespace: glp
+spec:
+  authenticationRefs:
+    bearerAuthRef: bearer-gitlab
+  name: test-repo
 ```
 
 ### Resource examples
@@ -94,8 +102,8 @@ kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: gl-token
-  namespace: krateo-system
+  name: gitlab-repo-creds 
+  namespace: gitlab-system
 type: Opaque
 stringData:
   token: <TOKEN>
@@ -117,8 +125,8 @@ metadata:
 spec:
   tokenRef:
     key: token
-    name: gl-token
-    namespace: krateo-system
+    name: gitlab-repo-creds 
+    namespace: gitlab-system 
 EOF
 ```
 
