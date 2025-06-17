@@ -149,7 +149,3 @@ They also define the operations that can be performed on those resources. Once t
 - **/assets** folder: Contains the selected OpenAPI Specification files for the GitLab API.
 
 - **/samples** folder: Contains example resources for each supported resource type as seen in this README. These examples demonstrate how to create and manage GitLab resources using the Krateo GitLab Provider.
-
-## Troubleshooting
-
-For troubleshooting, you can refer to the [Troubleshooting guide](./docs/troubleshooting.md) in the `/docs` folder of this chart. It contains common issues and solutions related to this chart.
