@@ -3,20 +3,13 @@ info:
   title: GitLab Project Management API
   version: 1.0.0
   description: >
-    Specifica OpenAPI 3.0 per la gestione dei progetti su GitLab.
+    OpenAPI specification for managing GitLab projects (repositories) using the GitLab API.
 servers:
   - url: https://gitlab.com/api/v4
-components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-security:
-  - BearerAuth: []
 paths:
   /projects:
     post:
-      summary: Crea un nuovo progetto
+      summary: Create a new project (repository)
       requestBody:
         required: true
         content:
@@ -29,16 +22,61 @@ paths:
                 visibility:
                   type: string
                   enum: [private, internal, public]
+                  default: private
                 initialize_with_readme:
                   type: boolean
-              required: [name]
+                  default: false
+              required:
+                - name
       responses:
         '201':
-          description: Progetto creato
-
+          description: Project successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+    get:
+      summary: List all visible projects for the authenticated user
+      description: >
+        Returns a list of projects visible to the authenticated user. 
+      parameters:
+        - name: membership
+          in: query
+          description: Limit by projects that the current user is a member of.
+          schema:
+            type: boolean
+          required: false
+        - name: simple
+          in: query
+          description: Return only limited fields for each project.
+          schema:
+            type: boolean
+          required: false
+        - name: per_page
+          in: query
+          description: Number of results per page (max 100).
+          schema:
+            type: integer
+            default: 100
+            maximum: 100
+          required: false
+      responses:
+        '200':
+          description: A list of projects the user can access
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
   /projects/{id}:
     get:
-      summary: Ottieni i dettagli di un progetto
+      summary: Get project details
       parameters:
         - name: id
           in: path
@@ -47,9 +85,13 @@ paths:
             type: string
       responses:
         '200':
-          description: Dettagli del progetto
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
     put:
-      summary: Aggiorna un progetto esistente
+      summary: Update an existing project
       parameters:
         - name: id
           in: path
@@ -70,9 +112,13 @@ paths:
                   enum: [private, internal, public]
       responses:
         '200':
-          description: Progetto aggiornato
+          description: Project successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
     delete:
-      summary: Elimina un progetto
+      summary: Delete a project
       parameters:
         - name: id
           in: path
@@ -81,4 +127,482 @@ paths:
             type: string
       responses:
         '202':
-          description: Progetto in fase di eliminazione
+          description: Project deletion in progress
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ProjectResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+          nullable: true
+          example: null
+        name:
+          type: string
+        name_with_namespace:
+          type: string
+        path:
+          type: string
+        path_with_namespace:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-09-02T09:31:25.036Z
+        default_branch:
+          type: string
+          example: main
+        tag_list:
+          type: array
+          items:
+            type: string
+          example: []
+        topics:
+          type: array
+          items:
+            type: string
+          example: []
+        ssh_url_to_repo:
+          type: string
+        http_url_to_repo:
+          type: string
+        web_url:
+          type: string
+        readme_url:
+          type: string
+          nullable: true
+          example: null
+        forks_count:
+          type: integer
+          example: 0
+        avatar_url:
+          type: string
+          nullable: true
+          example: null
+        star_count:
+          type: integer
+          example: 0
+        last_activity_at:
+          type: string
+          format: date-time
+          example: 2025-09-02T09:31:24.924Z
+        visibility:
+          type: string
+          enum: [private, internal, public]
+          example: public
+        namespace:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            path:
+              type: string
+            kind:
+              type: string
+              example: user
+            full_path:
+              type: string
+            parent_id:
+              type: integer
+              nullable: true
+              example: null
+            avatar_url:
+              type: string
+            web_url:
+              type: string
+        container_registry_image_prefix:
+          type: string
+        _links:
+          type: object
+          properties:
+            self:
+              type: string
+            issues:
+              type: string
+            merge_requests:
+              type: string
+            repo_branches:
+              type: string
+            labels:
+              type: string
+            events:
+              type: string
+            members:
+              type: string
+            cluster_agents:
+              type: string
+        marked_for_deletion_at:
+          type: string
+          nullable: true
+          example: null
+        marked_for_deletion_on:
+          type: string
+          nullable: true
+          example: null
+        packages_enabled:
+          type: boolean
+          example: true
+        empty_repo:
+          type: boolean
+          example: false
+        archived:
+          type: boolean
+          example: false
+        owner:
+          type: object
+          properties:
+            id:
+              type: integer
+            username:
+              type: string
+            public_email:
+              type: string
+              nullable: true
+              example: null
+            name:
+              type: string
+            state:
+              type: string
+              example: active
+            locked:
+              type: boolean
+              example: false
+            avatar_url:
+              type: string
+            web_url:
+              type: string
+        resolve_outdated_diff_discussions:
+          type: boolean
+          example: false
+        container_expiration_policy:
+          type: object
+          properties:
+            cadence:
+              type: string
+              example: 1d
+            enabled:
+              type: boolean
+              example: false
+            keep_n:
+              type: integer
+              example: 10
+            older_than:
+              type: string
+              example: 90d
+            name_regex:
+              type: string
+              example: .*
+            name_regex_keep:
+              type: string
+              nullable: true
+              example: null
+            next_run_at:
+              type: string
+              format: date-time
+              example: 2025-09-03T09:31:25.057Z
+        repository_object_format:
+          type: string
+          example: sha1
+        issues_enabled:
+          type: boolean
+          example: true
+        merge_requests_enabled:
+          type: boolean
+          example: true
+        wiki_enabled:
+          type: boolean
+          example: true
+        jobs_enabled:
+          type: boolean
+          example: true
+        snippets_enabled:
+          type: boolean
+          example: true
+        container_registry_enabled:
+          type: boolean
+          example: true
+        service_desk_enabled:
+          type: boolean
+          example: true
+        service_desk_address:
+          type: string
+        can_create_merge_request_in:
+          type: boolean
+          example: true
+        issues_access_level:
+          type: string
+          example: enabled
+        repository_access_level:
+          type: string
+          example: enabled
+        merge_requests_access_level:
+          type: string
+          example: enabled
+        forking_access_level:
+          type: string
+          example: enabled
+        wiki_access_level:
+          type: string
+          example: enabled
+        builds_access_level:
+          type: string
+          example: enabled
+        snippets_access_level:
+          type: string
+          example: enabled
+        pages_access_level:
+          type: string
+          example: private
+        analytics_access_level:
+          type: string
+          example: enabled
+        container_registry_access_level:
+          type: string
+          example: enabled
+        security_and_compliance_access_level:
+          type: string
+          example: private
+        releases_access_level:
+          type: string
+          example: enabled
+        environments_access_level:
+          type: string
+          example: enabled
+        feature_flags_access_level:
+          type: string
+          example: enabled
+        infrastructure_access_level:
+          type: string
+          example: enabled
+        monitor_access_level:
+          type: string
+          example: enabled
+        model_experiments_access_level:
+          type: string
+          example: enabled
+        model_registry_access_level:
+          type: string
+          example: enabled
+        emails_disabled:
+          type: boolean
+          example: false
+        emails_enabled:
+          type: boolean
+          example: true
+        show_diff_preview_in_email:
+          type: boolean
+          example: true
+        shared_runners_enabled:
+          type: boolean
+          example: true
+        lfs_enabled:
+          type: boolean
+          example: true
+        creator_id:
+          type: integer
+        import_url:
+          type: string
+          nullable: true
+          example: null
+        import_type:
+          type: string
+          nullable: true
+          example: null
+        import_status:
+          type: string
+          example: none
+        import_error:
+          type: string
+          nullable: true
+          example: null
+        open_issues_count:
+          type: integer
+          example: 0
+        description_html:
+          type: string
+          example: ""
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-09-02T09:31:25.036Z
+        ci_default_git_depth:
+          type: integer
+          example: 20
+        ci_delete_pipelines_in_seconds:
+          type: integer
+          nullable: true
+          example: null
+        ci_forward_deployment_enabled:
+          type: boolean
+          example: true
+        ci_forward_deployment_rollback_allowed:
+          type: boolean
+          example: true
+        ci_job_token_scope_enabled:
+          type: boolean
+          example: false
+        ci_separated_caches:
+          type: boolean
+          example: true
+        ci_allow_fork_pipelines_to_run_in_parent_project:
+          type: boolean
+          example: true
+        ci_id_token_sub_claim_components:
+          type: array
+          items:
+            type: string
+          example: ["project_path", "ref_type", "ref"]
+        build_git_strategy:
+          type: string
+          example: fetch
+        keep_latest_artifact:
+          type: boolean
+          example: true
+        restrict_user_defined_variables:
+          type: boolean
+          example: true
+        ci_pipeline_variables_minimum_override_role:
+          type: string
+          example: no_one_allowed
+        runner_token_expiration_interval:
+          type: integer
+          nullable: true
+          example: null
+        group_runners_enabled:
+          type: boolean
+          example: true
+        resource_group_default_process_mode:
+          type: string
+          example: unordered
+        auto_cancel_pending_pipelines:
+          type: string
+          example: enabled
+        build_timeout:
+          type: integer
+          example: 3600
+        auto_devops_enabled:
+          type: boolean
+          example: false
+        auto_devops_deploy_strategy:
+          type: string
+          example: continuous
+        ci_push_repository_for_job_token_allowed:
+          type: boolean
+          example: false
+        runners_token:
+          type: string
+        ci_config_path:
+          type: string
+          example: ""
+        public_jobs:
+          type: boolean
+          example: true
+        shared_with_groups:
+          type: array
+          items:
+            type: object
+          example: []
+        only_allow_merge_if_pipeline_succeeds:
+          type: boolean
+          example: false
+        allow_merge_on_skipped_pipeline:
+          type: boolean
+          nullable: true
+          example: null
+        request_access_enabled:
+          type: boolean
+          example: true
+        only_allow_merge_if_all_discussions_are_resolved:
+          type: boolean
+          example: false
+        remove_source_branch_after_merge:
+          type: boolean
+          example: true
+        printing_merge_request_link_enabled:
+          type: boolean
+          example: true
+        merge_method:
+          type: string
+          example: merge
+        merge_request_title_regex:
+          type: string
+          nullable: true
+          example: null
+        merge_request_title_regex_description:
+          type: string
+          nullable: true
+          example: null
+        squash_option:
+          type: string
+          example: default_off
+        enforce_auth_checks_on_uploads:
+          type: boolean
+          example: true
+        suggestion_commit_message:
+          type: string
+          nullable: true
+          example: null
+        merge_commit_template:
+          type: string
+          nullable: true
+          example: null
+        squash_commit_template:
+          type: string
+          nullable: true
+          example: null
+        issue_branch_template:
+          type: string
+          nullable: true
+          example: null
+        warn_about_potentially_unwanted_characters:
+          type: boolean
+          example: true
+        autoclose_referenced_issues:
+          type: boolean
+          example: true
+        max_artifacts_size:
+          type: integer
+          nullable: true
+          example: null
+        external_authorization_classification_label:
+          type: string
+          example: ""
+        requirements_enabled:
+          type: boolean
+          example: false
+        requirements_access_level:
+          type: string
+          example: enabled
+        security_and_compliance_enabled:
+          type: boolean
+          example: true
+        compliance_frameworks:
+          type: array
+          items:
+            type: string
+          example: []
+        duo_remote_flows_enabled:
+          type: boolean
+          example: false
+        web_based_commit_signing_enabled:
+          type: boolean
+          example: false
+      required:
+        - id
+        - name
+        - path
+        - path_with_namespace
+        - created_at
+        - default_branch
+        - visibility
+
+security:
+  - BearerAuth: []

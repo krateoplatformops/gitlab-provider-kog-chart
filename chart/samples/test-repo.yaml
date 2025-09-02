@@ -1,12 +1,15 @@
-apiVersion: gitlab.kog.krateo.io/v1alpha1
+apiVersion: gitlab.ogen.krateo.io/v1alpha1
 kind: Repo
 metadata:
   name: test-repo
-  namespace: glp
+  namespace: default
+  annotations:
+    krateo.io/connector-verbose: "true"
 spec:
-  authenticationRefs:
-    bearerAuthRef: bearer-gitlab
+  configurationRef:
+    name: my-gitlab-repo-config
+    namespace: default
   name: test-repo
-  visibility: public
+  visibility: private
   initialize_with_readme: true
   
