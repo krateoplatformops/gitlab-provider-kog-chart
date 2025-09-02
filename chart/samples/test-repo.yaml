@@ -12,4 +12,3 @@ spec:
   name: test-repo
   visibility: private
   initialize_with_readme: true
-  
