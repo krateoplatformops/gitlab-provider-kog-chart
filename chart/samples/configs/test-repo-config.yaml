@@ -16,4 +16,3 @@ spec:
       findby:
         membership: true          # Limit by projects that the current user is a member of.
         simple: true              # Limits the response body of the findby action to the most important fields.
-        #per_page: 100             # Number of results per page (max 100).
