@@ -1,26 +1,50 @@
 {{- if .Values.restdefinitions.repo.enabled }}
 kind: RestDefinition
-apiVersion: swaggergen.krateo.io/v1alpha1
+apiVersion: ogen.krateo.io/v1alpha1
 metadata:
   name: {{ .Release.Name }}-repo
 spec: 
   oasPath: configmap://{{ .Release.Namespace }}/{{ .Release.Name }}-repo/repo.yaml
-  resourceGroup: gitlab.kog.krateo.io
+  resourceGroup: gitlab.ogen.krateo.io
   resource: 
     kind: Repo
     identifiers:
+    - name
+    additionalStatusFields:
     - id
     verbsDescription:
+    - action: findby
+      method: GET
+      path: /projects
     - action: get
       method: GET
       path: /projects/{id}
+    - action: create
+      method: POST
+      path: /projects
     - action: update
       method: PUT
       path: /projects/{id}
     - action: delete
       method: DELETE
       path: /projects/{id}
-    - action: create
-      method: POST
-      path: /projects
+    configurationFields:
+    - fromOpenAPI:
+        name: membership
+        in: query
+      fromRestDefinition:
+        actions:
+          - findby
+    - fromOpenAPI:
+        name: simple
+        in: query
+      fromRestDefinition:
+        actions:
+          - findby
+    - fromOpenAPI:
+        name: per_page
+        in: query
+      fromRestDefinition:
+        actions:
+          - findby
 {{ end }}

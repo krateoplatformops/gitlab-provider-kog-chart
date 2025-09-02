@@ -1,11 +1,12 @@
-# GitLab Provider Helm Chart
+# GitLab Provider KOG Helm Chart
+
+***KOG***: (*Krateo Operator Generator*)
 
 This is a [Helm Chart](https://helm.sh/docs/topics/charts/) that deploys the Krateo GitLab Provider leveraging the [Krateo OASGen Provider](https://github.com/krateoplatformops/oasgen-provider) and using OpenAPI Specifications (OAS) of the GitLab API.
 This provider allows you to manage GitLab resources such as repositories.
 
 ## Summary
 
-- [Summary](#summary)
 - [Requirements](#requirements)
 - [How to install](#how-to-install)
 - [Supported resources](#supported-resources)
@@ -14,9 +15,9 @@ This provider allows you to manage GitLab resources such as repositories.
   - [Resource examples](#resource-examples)
 - [Authentication](#authentication)
 - [Configuration](#configuration)
+  - [Configuration resources](#configuration-resources)
   - [Verbose logging](#verbose-logging)
 - [Chart structure](#chart-structure)
-- [Troubleshooting](#troubleshooting)
 
 ## Requirements
 
@@ -37,23 +38,21 @@ helm install gitlab-provider krateo/gitlab-provider-kog
 
 You can check the status of the controllers by running:
 ```sh
-until kubectl get deployment gitlab-provider-<RESOURCE>-controller -n <YOUR_NAMESPACE> &>/dev/null; do
-  echo "Waiting for <RESOURCE> controller deployment to be created..."
-  sleep 5
-done
-kubectl wait deployments gitlab-provider-<RESOURCE>-controller --for condition=Available=True --namespace <YOUR_NAMESPACE> --timeout=300s
+kubectl get restdefinitions.ogen.krateo.io --all-namespaces | awk 'NR==1 || /gitlab/'
 ```
 
-Make sure to replace `<RESOURCE>` to one of the resources supported by the chart, such as `repo`, and `<YOUR_NAMESPACE>` with the namespace where you installed the chart.
-
-For instance, in the case of the `Repo` resource, you would run:
+You should see output similar to this:
 ```sh
-until kubectl get deployment gitlab-provider-repo-controller -n <YOUR_NAMESPACE> &>/dev/null; do
-  echo "Waiting for Repo controller deployment to be created..."
-  sleep 5
-done
-kubectl wait deployments gitlab-provider-repo-controller --for condition=Available=True --namespace <YOUR_NAMESPACE> --timeout=300s
+NAMESPACE       NAME                           READY   AGE
+krateo-system   gitlab-provider-repo           False   24s
 ```
+
+You can also wait for a specific RestDefinition (`gitlab-provider-repo` in this case) to be ready with a command like this:
+```sh
+kubectl wait restdefinitions.ogen.krateo.io gitlab-provider-repo --for condition=Ready=True --namespace krateo-system --timeout=300s
+```
+
+Note that the names of the RestDefinitions and the namespace where the RestDefinitions are installed may vary based on your configuration.
 
 ## Supported resources
 
@@ -63,8 +62,7 @@ This chart supports the following resources and operations:
 |--------------|------|--------|--------|--------|
 | Repo         | ✅   | ✅     | ✅     | ✅     |
 
-
-The resources listed above are Custom Resources (CRs) defined in the `gitlab.kog.krateo.io` API group. They are used to manage GitLab resources in a Kubernetes-native way, allowing you to create, update, and delete GitLab resources using Kubernetes manifests.
+The resources listed above are Custom Resources (CRs) defined in the `gitlab.ogen.krateo.io` API group. They are used to manage GitLab resources in a Kubernetes-native way, allowing you to create, update, and delete GitLab resources using Kubernetes manifests.
 
 ### Resource details
 
@@ -72,23 +70,37 @@ The resources listed above are Custom Resources (CRs) defined in the `gitlab.kog
 
 The `Repo` resource allows you to create, update, and delete GitLab repositories.
 
+Note: currently only the creation of repositories in the user's personal namespace (default namespace) is supported.
+
 An example of a Repo resource is:
 ```yaml
-apiVersion: gitlab.kog.krateo.io/v1alpha1
+apiVersion: gitlab.ogen.krateo.io/v1alpha1
 kind: Repo
 metadata:
   name: test-repo
-  namespace: glp
+  namespace: default
 spec:
-  authenticationRefs:
-    bearerAuthRef: bearer-gitlab
+  configurationRef:
+    name: my-gitlab-repo-config
+    namespace: default 
   name: test-repo
+  visibility: public
+  initialize_with_readme: true
 ```
+
+The `Repo` resource schema includes the following fields:
+
+| Field | Type | Description | Notes |
+| :--- | :--- | :--- | :--- |
+| `configurationRef.name` | `string` | Name of the RepoConfiguration resource to use. |
+| `configurationRef.namespace` | `string` | Namespace of the RepoConfiguration resource to use. |
+| `name` | `string` | Name of the repository. | Required. |
+| `initialize_with_readme` | `boolean` | Whether to initialize the repository with a README file. | Optional. Default: `false`. |
+| `visibility` | `string` | Visibility level of the repository. | Optional. One of: `private`, `internal`, `public`. Default: `private`. |
 
 ### Resource examples
 
 You can find example resources for each supported resource type in the `/samples` folder of the chart.
-These examples Custom Resources (CRs) shows every possible field that can be set in the resource.
 
 ## Authentication
 
@@ -102,8 +114,8 @@ kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: gitlab-repo-creds 
-  namespace: gitlab-system
+  name: gitlab-token
+  namespace: default
 type: Opaque
 stringData:
   token: <TOKEN>
@@ -112,25 +124,59 @@ EOF
 
 Replace `<TOKEN>` with your actual GitLab Token.
 
-- **BearerAuth**: This resource references the Kubernetes Secret and is used to authenticate with the GitLab API. It is used in the `authenticationRefs` field of the resources defined in this chart.
+- **\<Resource\>Configuration**: These resource can reference the Kubernetes Secret and are used to authenticate with the GitHub REST API. They must be referenced with the `configurationRef` field of the resources defined in this chart. The configuration resource can be in a different namespace than the resource itself.
 
-Example of a BearerAuth resource that references the Kubernetes Secret, to be applied to your cluster:
+Note that the specific configuration resource type depends on the resource you are managing. For instance, in the case of the `Repo` resource, you would need a `RepoConfiguration`.
+
+An example of a `RepoConfiguration` resource that references the Kubernetes Secret, to be applied to your cluster:
 ```sh
 kubectl apply -f - <<EOF
-apiVersion: gitlab.kog.krateo.io/v1alpha1
-kind: BearerAuth
+apiVersion: gitlab.ogen.krateo.io/v1alpha1
+kind: RepoConfiguration
 metadata:
-  name: bearer-gitlab
-  namespace: glp
+  name: my-gitlab-repo-config
+  namespace: default
 spec:
-  tokenRef:
-    key: token
-    name: gitlab-repo-creds 
-    namespace: gitlab-system 
+  authentication:
+    bearer:
+      # Reference to a secret containing the bearer token
+      tokenRef:
+        name: gitlab-token        # Name of the secret
+        namespace: default        # Namespace where the secret exists
+        key: token                # Key within the secret that contains the token
 EOF
 ```
 
+Then, in the `Repo` resource, you can reference the `RepoConfiguration` resource as follows:
+```yaml
+apiVersion: gitlab.kog.krateo.io/v1alpha1
+kind: Repo
+metadata:
+  name: test-repo
+  namespace: default
+spec:
+  configurationRef:
+    name: my-gitlab-repo-config
+    namespace: default
+  name: test-repo
+  visibility: public
+  initialize_with_readme: true
+```
+
+More details about the configuration resources in the [Configuration resources](#configuration-resources) section below.
+
 ## Configuration
+
+### Configuration resources
+
+Each resource type (e.g., `Repo`) requires a specific configuration resource (e.g., `RepoConfiguration`) to be created in the cluster.
+Currently, the supported configuration resources are:
+- `RepoConfiguration`
+
+These configuration resources are used to store the authentication information (i.e., reference to the Kubernetes Secret containing the GitLab token) and other configuration options for the resource type.
+You can find examples of these configuration resources in the `/samples/configs` folder of the chart.
+Note that a single configuration resource can be used by multiple resources of the same type.
+For example, you can create a single `RepoConfiguration` resource and reference it in multiple `Repo` resources.
 
 ### Verbose logging
 
