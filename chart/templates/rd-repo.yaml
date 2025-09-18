@@ -12,6 +12,8 @@ spec:
     - name
     additionalStatusFields:
     - id
+    excludedSpecFields:
+    - id
     verbsDescription:
     - action: findby
       method: GET
